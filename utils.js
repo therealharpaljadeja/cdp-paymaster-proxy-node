@@ -81,6 +81,7 @@ function isUsingMagicSpend(userOp) {
     });
 
     const calls = calldata.args[0];
+    console.log("Calls", calls);
 
     // if there is more than one call, check if the first is a magic spend call
     return (

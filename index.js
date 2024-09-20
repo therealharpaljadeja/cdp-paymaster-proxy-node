@@ -12,7 +12,13 @@ app.post("/paymaster", async (req, res) => {
     const { method, params } = req.body;
     const [userOp, entrypoint, chainId] = params;
 
-    if (!willSponsor({ chainId: parseInt(chainId), entrypoint, userOp })) {
+    const willSponsorUserOp = await willSponsor({
+        chainId: parseInt(chainId),
+        entrypoint,
+        userOp,
+    });
+
+    if (!willSponsorUserOp) {
         return res.json({ error: "Not a sponsorable operation" });
     }
 
