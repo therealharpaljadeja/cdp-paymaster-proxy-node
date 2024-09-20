@@ -6,7 +6,7 @@ const {
     decodeAbiParameters,
     decodeFunctionData,
 } = require("viem");
-const { base } = require("viem/chains");
+const { base, baseSepolia } = require("viem/chains");
 const { client } = require("./config");
 const {
     coinbaseSmartWalletABI,
@@ -18,7 +18,7 @@ const {
 
 async function willSponsor({ chainId, entrypoint, userOp }) {
     // check chain id
-    if (chainId !== base.id) return false;
+    if (chainId !== baseSepolia.id) return false;
     // check entrypoint
     // not strictly needed given below check on implementation address, but leaving as example
     if (entrypoint.toLowerCase() !== ENTRYPOINT_ADDRESS_V06.toLowerCase())
