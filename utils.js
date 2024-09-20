@@ -95,7 +95,6 @@ const convertReverseNodeToBytes = (address, chainId) => {
 };
 
 const getName = async ({ address, chain }) => {
-    console.log("getName");
     const chainIsBase = chain.id === base.id;
 
     let client = createPublicClient({
@@ -118,34 +117,28 @@ const getName = async ({ address, chain }) => {
         }
     }
 
-    return null;
+    return false;
 };
 
 async function willSponsor({ chainId, entrypoint, userOp }) {
     // check chain id
-    console.log("willSponsor");
     if (!isChainIdSepolia(chainId)) return false;
 
     // check entrypoint
     // not strictly needed given below check on implementation address, but leaving as example
     if (!isEntrypointV6(entrypoint)) return false;
-    console.log("entrypoint");
     try {
         // check the userOp.sender is a proxy with the expected bytecode
         if (!(await isCoinbaseSmartWalletProxy(userOp))) return false;
-        console.log("proxy");
 
         // check that userOp.sender proxies to expected implementation
         if (!(await isCoinbaseWalletV1(userOp))) return false;
-        console.log("v1");
 
         // check that userOp.callData is making a call we want to sponsor
         if (!isCallExecuteBatch(userOp)) return false;
-        console.log("batch");
 
         // Does the userOp comprise of multiple calls
         if (isBatchCall(userOp)) return false;
-        console.log("batchcall");
 
         // Does the userOp sender hold a BaseName?
         if (!getName({ address: userOp.sender, chain: base })) return false;
