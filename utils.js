@@ -112,7 +112,7 @@ const getName = async ({ address, chain }) => {
         });
 
         if (basename) {
-            console.log(basename);
+            console.log("Basename", basename);
             return basename;
         }
     }
