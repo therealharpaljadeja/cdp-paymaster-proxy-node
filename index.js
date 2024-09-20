@@ -38,9 +38,9 @@ app.post("/paymaster", async (req, res) => {
     const { method, params } = req.body;
     const [userOp, entrypoint, chainId] = params;
 
-    if (!willSponsor({ chainId: parseInt(chainId), entrypoint, userOp })) {
-        return res.json({ error: "Not a sponsorable operation" });
-    }
+    // if (!willSponsor({ chainId: parseInt(chainId), entrypoint, userOp })) {
+    //     return res.json({ error: "Not a sponsorable operation" });
+    // }
 
     if (method === "pm_getPaymasterStubData") {
         try {
