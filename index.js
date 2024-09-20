@@ -34,7 +34,6 @@ const corsOptions = {
 app.use(express.json());
 
 app.post("/paymaster", async (req, res) => {
-    console.log(req);
     const { method, params } = req.body;
     const [userOp, entrypoint, chainId] = params;
 
@@ -42,6 +41,7 @@ app.post("/paymaster", async (req, res) => {
     //     return res.json({ error: "Not a sponsorable operation" });
     // }
 
+    console.log("userOp", userOp);
     if (method === "pm_getPaymasterStubData") {
         try {
             const result = await paymasterClient.getPaymasterStubData({
@@ -56,6 +56,7 @@ app.post("/paymaster", async (req, res) => {
             const result = await paymasterClient.getPaymasterData({
                 userOperation: userOp,
             });
+            console.log("Result", result);
             return res.json({ result });
         } catch (error) {
             return res.status(500).json({ error: error.message });
