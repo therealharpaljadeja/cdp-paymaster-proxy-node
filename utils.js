@@ -1,3 +1,5 @@
+const { abi } = require("./L2ResolverABI");
+
 const { ENTRYPOINT_ADDRESS_V06, UserOperation } = require("permissionless");
 const {
     Address,
@@ -5,6 +7,9 @@ const {
     Hex,
     decodeAbiParameters,
     decodeFunctionData,
+    keccak256,
+    namehash,
+    encodePacked,
 } = require("viem");
 const { base, baseSepolia } = require("viem/chains");
 const { client } = require("./config");
@@ -16,55 +21,144 @@ const {
     magicSpendAddress,
 } = require("./constants");
 
+function isChainIdSepolia(chainId) {
+    return chainId === baseSepolia.id;
+}
+
+function isEntrypointV6() {
+    return entrypoint.toLowerCase() === ENTRYPOINT_ADDRESS_V06.toLowerCase();
+}
+
+async function isCoinbaseSmartWalletProxy(userOp) {
+    const code = await client.getBytecode({ address: userOp.sender });
+    return code == coinbaseSmartWalletProxyBytecode;
+}
+
+async function isCoinbaseWalletV1(userOp) {
+    const implementation = await client.request({
+        method: "eth_getStorageAt",
+        params: [userOp.sender, erc1967ProxyImplementationSlot, "latest"],
+    });
+
+    const implementationAddress = decodeAbiParameters(
+        [{ type: "address" }],
+        implementation
+    )[0];
+
+    return implementationAddress == coinbaseSmartWalletV1Implementation;
+}
+
+function isCallExecuteBatch(userOp) {
+    const calldata = decodeFunctionData({
+        abi: coinbaseSmartWalletABI,
+        data: userOp.callData,
+    });
+
+    // keys.coinbase.com always uses executeBatch
+    if (calldata.functionName !== "executeBatch") return false;
+    if (!calldata.args || calldata.args.length == 0) return false;
+
+    return true;
+}
+
+function isBatchCall(userOp) {
+    const calldata = decodeFunctionData({
+        abi: coinbaseSmartWalletABI,
+        data: userOp.callData,
+    });
+
+    const calls = calldata.args[0];
+    // modify if want to allow batch calls to your contract
+    if (calls.length > 2) return true;
+
+    return false;
+}
+
+function isUsingMagicSpend(userOp) {
+    const calldata = decodeFunctionData({
+        abi: coinbaseSmartWalletABI,
+        data: userOp.callData,
+    });
+
+    const calls = calldata.args[0];
+
+    // if there is more than one call, check if the first is a magic spend call
+    return (
+        calls.length > 1 &&
+        calls[0].target.toLowerCase() === magicSpendAddress.toLowerCase()
+    );
+}
+
+const convertChainIdToCoinType = (chainId) => {
+    const cointype = (0x80000000 | chainId) >>> 0;
+    return cointype.toString(16).toLocaleUpperCase();
+};
+
+const convertReverseNodeToBytes = (address, chainId) => {
+    const addressFormatted = address.toLocaleLowerCase();
+    const addressNode = keccak256(addressFormatted.substring(2));
+    const chainCoinType = convertChainIdToCoinType(chainId);
+    const baseReverseNode = namehash(
+        `${chainCoinType.toLocaleUpperCase()}.reverse`
+    );
+    const addressReverseNode = keccak256(
+        encodePacked(["bytes32", "bytes32"], [baseReverseNode, addressNode])
+    );
+    return addressReverseNode;
+};
+
+const getName = async ({ address, chain }) => {
+    const chainIsBase = chain.id === base.id;
+
+    let client = createPublicClient({
+        chain: base,
+        transport: http(),
+    });
+
+    if (chainIsBase) {
+        const addressReverseNode = convertReverseNodeToBytes(address, base.id);
+        const basename = await client.readContract({
+            abi,
+            address: "0xC6d566A56A1aFf6508b41f6c90ff131615583BCD",
+            functionName: "name",
+            args: [addressReverseNode],
+        });
+
+        if (basename) {
+            console.log(basename);
+            return basename;
+        }
+    }
+
+    return null;
+};
+
 async function willSponsor({ chainId, entrypoint, userOp }) {
     // check chain id
-    if (chainId !== baseSepolia.id) return false;
+    if (!isChainIdSepolia(chainId)) return false;
+
     // check entrypoint
     // not strictly needed given below check on implementation address, but leaving as example
-    if (entrypoint.toLowerCase() !== ENTRYPOINT_ADDRESS_V06.toLowerCase())
-        return false;
+    if (!isEntrypointV6(entrypoint)) return false;
 
     try {
         // check the userOp.sender is a proxy with the expected bytecode
-        const code = await client.getBytecode({ address: userOp.sender });
-        if (code != coinbaseSmartWalletProxyBytecode) return false;
+        if (!(await isCoinbaseSmartWalletProxy(userOp))) return false;
 
         // check that userOp.sender proxies to expected implementation
-        const implementation = await client.request({
-            method: "eth_getStorageAt",
-            params: [userOp.sender, erc1967ProxyImplementationSlot, "latest"],
-        });
-        const implementationAddress = decodeAbiParameters(
-            [{ type: "address" }],
-            implementation
-        )[0];
-        if (implementationAddress != coinbaseSmartWalletV1Implementation)
-            return false;
+        if (!(await isCoinbaseWalletV1(userOp))) return false;
 
         // check that userOp.callData is making a call we want to sponsor
-        const calldata = decodeFunctionData({
-            abi: coinbaseSmartWalletABI,
-            data: userOp.callData,
-        });
+        if (!isCallExecuteBatch(userOp)) return false;
 
-        // keys.coinbase.com always uses executeBatch
-        if (calldata.functionName !== "executeBatch") return false;
-        if (!calldata.args || calldata.args.length == 0) return false;
+        // Does the userOp comprise of multiple calls
+        if (isBatchCall(userOp)) return false;
 
-        const calls = calldata.args[0];
-        // modify if want to allow batch calls to your contract
-        if (calls.length > 2) return false;
+        // Is magic spend being used?
+        if (!isUsingMagicSpend(userOp)) return false;
 
-        let callToCheckIndex = 0;
-        if (calls.length > 1) {
-            // if there is more than one call, check if the first is a magic spend call
-            if (
-                calls[0].target.toLowerCase() !==
-                magicSpendAddress.toLowerCase()
-            )
-                return false;
-            callToCheckIndex = 1;
-        }
+        // Does the userOp sender hold a BaseName?
+        if (!getName({ address: userOp.sender, chain: base })) return false;
 
         return true;
     } catch (e) {
