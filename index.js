@@ -31,7 +31,6 @@ app.post("/paymaster", async (req, res) => {
             const result = await paymasterClient.getPaymasterData({
                 userOperation: userOp,
             });
-            console.log("Result", result);
             return res.json({ result });
         } catch (error) {
             return res.status(500).json({ error: error.message });
