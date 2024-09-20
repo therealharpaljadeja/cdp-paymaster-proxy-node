@@ -25,7 +25,7 @@ function isChainIdSepolia(chainId) {
     return chainId === baseSepolia.id;
 }
 
-function isEntrypointV6() {
+function isEntrypointV6(entrypoint) {
     return entrypoint.toLowerCase() === ENTRYPOINT_ADDRESS_V06.toLowerCase();
 }
 
