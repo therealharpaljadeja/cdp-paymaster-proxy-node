@@ -18,6 +18,7 @@ const corsOptions = {
         const allowedOrigins = [
             "https://cdp-paymaster-pro-tutorial.vercel.app",
         ];
+
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
@@ -28,7 +29,7 @@ const corsOptions = {
 };
 
 // Apply CORS middleware
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
 
 app.use(express.json());
 
