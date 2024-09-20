@@ -10,6 +10,8 @@ const {
     keccak256,
     namehash,
     encodePacked,
+    createPublicClient,
+    http,
 } = require("viem");
 const { base, baseSepolia } = require("viem/chains");
 const { client } = require("./config");
@@ -71,25 +73,6 @@ function isBatchCall(userOp) {
     // modify if want to allow batch calls to your contract
     if (calls.length > 2) return true;
 
-    return false;
-}
-
-function isUsingMagicSpend(userOp) {
-    const calldata = decodeFunctionData({
-        abi: coinbaseSmartWalletABI,
-        data: userOp.callData,
-    });
-
-    const calls = calldata.args[0];
-    console.log("Calls", calls);
-
-    if (calls.length > 1) {
-        return (
-            calls[0].target.toLowerCase() === magicSpendAddress.toLowerCase()
-        );
-    }
-
-    // if there is more than one call, check if the first is a magic spend call
     return false;
 }
 
