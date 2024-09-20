@@ -16,7 +16,7 @@ const corsOptions = {
 
         // List of allowed origins
         const allowedOrigins = [
-            "https://cdp-paymaster-pro-tutorial.vercel.app/",
+            "https://cdp-paymaster-pro-tutorial.vercel.app",
         ];
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
