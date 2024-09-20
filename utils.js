@@ -108,6 +108,7 @@ const convertReverseNodeToBytes = (address, chainId) => {
 };
 
 const getName = async ({ address, chain }) => {
+    console.log("getName");
     const chainIsBase = chain.id === base.id;
 
     let client = createPublicClient({
