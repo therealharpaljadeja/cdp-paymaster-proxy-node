@@ -12,6 +12,8 @@ const corsOptions = {
         // Allow requests with no origin (like mobile apps or curl requests)
         // if (!origin) return callback(null, true);
 
+        console.log("Origin", origin);
+
         // List of allowed origins
         const allowedOrigins = [
             "http://localhost:3000",
