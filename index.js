@@ -16,10 +16,7 @@ const corsOptions = {
 
         // List of allowed origins
         const allowedOrigins = [
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-            "http://localhost:5000",
-            "http://127.0.0.1:5000",
+            "https://cdp-paymaster-pro-tutorial.vercel.app/",
         ];
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
