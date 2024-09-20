@@ -83,11 +83,14 @@ function isUsingMagicSpend(userOp) {
     const calls = calldata.args[0];
     console.log("Calls", calls);
 
+    if (calls.length > 1) {
+        return (
+            calls[0].target.toLowerCase() === magicSpendAddress.toLowerCase()
+        );
+    }
+
     // if there is more than one call, check if the first is a magic spend call
-    return (
-        calls.length > 1 &&
-        calls[0].target.toLowerCase() === magicSpendAddress.toLowerCase()
-    );
+    return false;
 }
 
 const convertChainIdToCoinType = (chainId) => {
@@ -160,10 +163,6 @@ async function willSponsor({ chainId, entrypoint, userOp }) {
         // Does the userOp comprise of multiple calls
         if (isBatchCall(userOp)) return false;
         console.log("batchcall");
-
-        // Is magic spend being used?
-        if (!isUsingMagicSpend(userOp)) return false;
-        console.log("magicSpend");
 
         // Does the userOp sender hold a BaseName?
         if (!getName({ address: userOp.sender, chain: base })) return false;
