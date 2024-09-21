@@ -29,7 +29,7 @@ function isEntrypointV6(entrypoint) {
 }
 
 async function isCoinbaseSmartWalletProxy(userOp) {
-    const code = await client.getBytecode({ address: userOp.sender });
+    const code = await client.getCode({ address: userOp.sender });
     return code == coinbaseSmartWalletProxyBytecode;
 }
 
