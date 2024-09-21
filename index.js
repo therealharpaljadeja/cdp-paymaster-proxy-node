@@ -21,6 +21,7 @@ app.post("/paymaster", async (req, res) => {
         return res.json({ error: "Not a sponsorable operation" });
     }
 
+    console.log("Method", method);
     if (method === "pm_getPaymasterStubData") {
         try {
             const result = await paymasterClient.getPaymasterStubData({
