@@ -1,10 +1,7 @@
 const { abi } = require("./L2ResolverABI");
 
-const { ENTRYPOINT_ADDRESS_V06, UserOperation } = require("permissionless");
+const { ENTRYPOINT_ADDRESS_V06 } = require("permissionless");
 const {
-    Address,
-    BlockTag,
-    Hex,
     decodeAbiParameters,
     decodeFunctionData,
     keccak256,
@@ -13,7 +10,7 @@ const {
     createPublicClient,
     http,
 } = require("viem");
-const { base, baseSepolia } = require("viem/chains");
+const { base } = require("viem/chains");
 const { client } = require("./config");
 const {
     coinbaseSmartWalletABI,
@@ -23,8 +20,8 @@ const {
     magicSpendAddress,
 } = require("./constants");
 
-function isChainIdSepolia(chainId) {
-    return chainId === baseSepolia.id;
+function isChainIdBase(chainId) {
+    return chainId === base.id;
 }
 
 function isEntrypointV6(entrypoint) {
@@ -122,11 +119,12 @@ const getName = async ({ address, chain }) => {
 
 async function willSponsor({ chainId, entrypoint, userOp }) {
     // check chain id
-    if (!isChainIdSepolia(chainId)) return false;
+    if (!isChainIdBase(chainId)) return false;
 
     // check entrypoint
     // not strictly needed given below check on implementation address, but leaving as example
     if (!isEntrypointV6(entrypoint)) return false;
+
     try {
         // check the userOp.sender is a proxy with the expected bytecode
         if (!(await isCoinbaseSmartWalletProxy(userOp))) return false;
